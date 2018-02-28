@@ -81,6 +81,11 @@ class Vehicle:
                                     .format(self.id))['response']
 
     @property
+    def data(self):
+        return self._conn.read_json('/api/1/vehicles/{}/data' \
+                                    .format(self.id)) #['response']
+
+    @property
     def charge_state(self):
         return self.request('charge_state')
 
