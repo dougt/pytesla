@@ -40,14 +40,18 @@ class Session:
         if not self._is_open:
             self.open()
 
-        headers = {}
+        headers = {
+            'User-Agent': 'Model S 2.1.79 (SM-G900V; Android REL 4.4.4; en_US)',
+            'X-Tesla-User-Agent': 'TeslaApp/3.4.4-350/fad4a582e/android/9.0.0',
+            'Content-Type': 'application/json; charset=utf-8'
+        }
 
         if 'access_token' in self.state:
             headers['Authorization'] = 'Bearer {}' \
                                        .format(str(self.state['access_token']))
 
         if type(post_data) == dict:
-            post = urllib.parse.urlencode(post_data)
+            post = json.dumps(post_data)
         else:
             post = post_data
 
