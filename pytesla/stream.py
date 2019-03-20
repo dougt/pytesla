@@ -1,9 +1,8 @@
-import urllib.request
-import contextlib
+import websocket
 import base64
+import json
 
-#import http.client
-#http.client.HTTPConnection.debuglevel = 1
+#websocket.enableTrace(True)
 
 class StreamEvents:
     SPEED            = 'speed'         # int, or str if shift_state is ''
@@ -22,7 +21,7 @@ class StreamEvents:
 class Stream:
     def __init__(self, vehicle):
         self._vehicle = vehicle
-        self._request = None
+        self._ws = None
         self._log = vehicle._log
 
     def __repr__(self):
@@ -30,57 +29,44 @@ class Stream:
 
     def connect(self, events):
         self._log.debug("Stream connect")
-        n = 0
 
-        while (n < 2):
-            n += 1
+        # Refresh our vehicles list to ensure we have an
+        # up-to-date token.
+        self._vehicle.refresh()
 
-            self._log.debug("Stream connect iteration {}".format(n))
+        self._ws = websocket \
+            .create_connection("wss://streaming.vn.teslamotors.com/streaming/",
+                               timeout = 10)
 
-            auth_str = "{}:{}".format(self._vehicle.email,
-                                      self._vehicle.stream_auth_token)
-            auth = base64.b64encode(bytes(auth_str, 'utf-8')).decode('utf-8')
+        auth_str = "{}:{}".format(self._vehicle.email,
+                                  self._vehicle.stream_auth_token)
 
-            params = "?values=" + ','.join(events)
-
-            url ='https://streaming.vn.teslamotors.com/stream/{}/{}' \
-                .format(self._vehicle.vehicle_id, params)
-            headers = {'Authorization': 'Basic ' + auth}
-
-            self._request = urllib.request.Request(url, headers = headers)
-
-            try:
-                response = urllib.request.urlopen(self._request)
-
-                if not response:
-                    raise Exception("Connection failed, no response returned.")
-
-                self._log.debug("Stream connection established")
-
-                return response
-            except urllib.error.HTTPError as e:
-                if e.code == 401 and \
-                   e.reason in ["provide valid authentication",
-                                "Unauthorized"]:
-                    self._log.debug("Authentication error, retrying")
-
-                    # Refresh our vehicles list to ensure we have an
-                    # up-to-date token.
-                    self._vehicle.refresh()
-
-                    continue
-
-                raise e
-
-        raise Exception("Stream connection failed.")
+        self._ws.send(json.dumps({
+            'msg_type': 'data:subscribe',
+            'token': base64.b64encode(bytes(auth_str, 'utf-8')).decode('utf-8'),
+            'value': ','.join(events),
+            'tag': str(self._vehicle.vehicle_id)
+        }))
 
     def close(self):
-        self._request = None
+        if self._ws is not None:
+            self._ws.close()
+            self._ws = None
 
     def read_stream(self, events, count):
         self._log.debug("In read_stream(count = {})".format(count))
         total = 0
         iter_count = 0
+
+        self.connect(events)
+
+        msg = json.loads(self._ws.recv())
+
+        if msg['msg_type'] != 'control:hello':
+            self._log.debug("Expected control:hello message, got: {}" \
+                            .format(str(msg)))
+
+            return
 
         while True:
             n = 0
@@ -89,10 +75,14 @@ class Stream:
 
             self._log.debug("In read_stream(), iteration {}".format(iter_count))
 
-            with contextlib.closing(self.connect(events)) as response:
-                self._log.debug("In read_stream(), connected")
-                for line in response:
-                    data = line.decode('utf-8').strip().split(',')
+            try:
+                msg = json.loads(self._ws.recv())
+
+                self._log.debug("Received '{}'".format(str(msg)))
+
+                if msg['msg_type'] == 'data:update':
+                    data = msg['value'].split(',')
+
                     event = {'timestamp': data[0]}
                     for i in range(0, len(events)):
                         event[events[i]] = data[i + 1]
@@ -105,19 +95,28 @@ class Stream:
                     self._log.debug("In read_stream(), n = {}, total = {}" \
                                     .format(n, total))
 
-                    if count != 0 and total >= count or not self._request:
+                    if count != 0 and total >= count or not self._ws:
                         self._log.debug("In read_stream(), inner break")
                         break
 
-            # If we were closed, stop
-            if not self._request:
-                self._log.debug("In read_stream(), closed")
+                    continue
+
+                if msg['msg_type'] == 'data:error':
+                    self._log.write("Stream error {} received, closing socket" \
+                                    .format(str(msg)))
+
+                    self._ws.close()
+                    self._ws = None
+
+                    break
+            except Exception as e:
+                self._log.write("Stream read error: {}".format(str(e)))
+
                 break
 
-            # If the car isn't being driven the streaming server just
-            # sends one event and then times out. In that case, stop.
-            if n <= 1:
-                self._log.debug("In read_stream(), n <= 1")
+            # If we were closed, stop
+            if not self._ws:
+                self._log.debug("In read_stream(), closed")
                 break
 
             # If we got as many or more events than we asked for, stop.
