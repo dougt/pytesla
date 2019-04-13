@@ -11,3 +11,6 @@ Connection = connection.Connection
 
 from . import stream
 StreamEvents = stream.StreamEvents
+
+from . import powerwall
+Powerwall = powerwall.Powerwall
