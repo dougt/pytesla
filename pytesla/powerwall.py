@@ -79,8 +79,6 @@ class LocalSession:
 
         data = request.read().decode('utf-8')
 
-        request.close()
-
         return json.loads(data)
 
 class Powerwall:
