@@ -1,4 +1,5 @@
 import urllib
+import socket
 import json
 import ssl
 
@@ -17,6 +18,7 @@ class NoOpLogger:
 class LocalSession:
     def __init__(self, host, log):
         self._host = host
+        self._addr = socket.gethostbyname(host)
 
         if log == None:
             log = NoOpLogger()
@@ -27,7 +29,7 @@ class LocalSession:
         self._context = ssl._create_unverified_context()
 
     def open(self):
-        self._httpconn = HTTPSConnection(self._host,
+        self._httpconn = HTTPSConnection(self._addr,
                                          context = self._context)
         #self._httpconn.set_debuglevel(5)
 
