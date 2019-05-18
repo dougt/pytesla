@@ -145,6 +145,19 @@ class Vehicle:
         return self.command('set_temps', driver_temp = driver,
                             passenger_temp = passenger)
 
+    def remote_seat_heater(self, heater, level):
+        if heater not in range(0, 6):
+            raise ValueError("Invalid seat heater: {}".format(heater))
+
+        if level not in range(0, 4):
+            raise ValueError("Invalid seat heater level: {}".format(level))
+
+        return self.command('remote_seat_heater_request', heater = heater,
+                            level = level)
+
+    def remote_steering_wheel_heater(self, on):
+        return self.command('remote_steering_wheel_heater_request', on = on)
+
     def auto_conditioning_start(self):
         return self.command('auto_conditioning_start')
 
