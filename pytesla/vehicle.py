@@ -141,6 +141,17 @@ class Vehicle:
     def honk_horn(self):
         return self.command('honk_horn')
 
+    def sun_roof_control(self, state, percent = None):
+        args = {'state': state}
+
+        if state == 'move' and percent != None:
+            args['percent'] = percent
+
+        if state in ('open', 'close', 'move', 'comfort', 'vent'):
+            return self.command('sun_roof_control', **args)
+
+        raise ValueError("Invalid sunroof state")
+
     def set_temps(self, driver, passenger):
         return self.command('set_temps', driver_temp = driver,
                             passenger_temp = passenger)
@@ -163,17 +174,6 @@ class Vehicle:
 
     def auto_conditioning_stop(self):
         return self.command('auto_conditioning_stop')
-
-    def sun_roof_control(self, state, percent = None):
-        args = {'state': state}
-
-        if state == 'move' and percent != None:
-            args['percent'] = percent
-
-        if state in ('open', 'close', 'move', 'comfort', 'vent'):
-            return self.command('sun_roof_control', **args)
-
-        raise ValueError("Invalid sunroof state")
 
     def wake_up(self):
         d = self._conn.read_json('/api/1/vehicles/{}/wake_up' \
