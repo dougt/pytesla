@@ -14,3 +14,6 @@ StreamEvents = stream.StreamEvents
 
 from . import powerwall
 Powerwall = powerwall.Powerwall
+
+from . import options
+OPTIONS = options.OPTIONS
