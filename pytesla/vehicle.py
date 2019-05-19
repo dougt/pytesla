@@ -106,12 +106,6 @@ class Vehicle:
         return self.request('vehicle_state')
 
     # API commands
-    def door_lock(self):
-        return self.command('door_lock')
-
-    def door_unlock(self):
-        return self.command('door_unlock')
-
     def charge_port_door_open(self):
         return self.command('charge_port_door_open')
 
@@ -140,6 +134,12 @@ class Vehicle:
 
     def honk_horn(self):
         return self.command('honk_horn')
+
+    def door_lock(self):
+        return self.command('door_lock')
+
+    def door_unlock(self):
+        return self.command('door_unlock')
 
     def sun_roof_control(self, state, percent = None):
         args = {'state': state}
