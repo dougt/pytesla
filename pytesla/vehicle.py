@@ -135,11 +135,17 @@ class Vehicle:
     def honk_horn(self):
         return self.command('honk_horn')
 
-    def door_lock(self):
-        return self.command('door_lock')
+    @property
+    def locked(self):
+        return self.vehicle_state['locked']
 
-    def door_unlock(self):
-        return self.command('door_unlock')
+    @locked.setter
+    def locked(self, lock):
+        if lock:
+            return self.command('door_lock')
+        else:
+            return self.command('door_unlock')
+
 
     def sun_roof_control(self, state, percent = None):
         args = {'state': state}
