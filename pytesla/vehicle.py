@@ -109,6 +109,9 @@ class Vehicle:
     def charge_port_door_open(self):
         return self.command('charge_port_door_open')
 
+    def charge_port_door_close(self):
+        return self.command('charge_port_door_close')
+
     def charge_standard(self):
         return self.command('charge_standard')
 
@@ -135,6 +138,35 @@ class Vehicle:
     def honk_horn(self):
         return self.command('honk_horn')
 
+    def remote_start_drive(self, password):
+        return self.command('remote_start_drive', password = password)
+
+    @property
+    def speed_limit(self):
+        return self.vehicle_state['speed_limit_mode']
+
+    @speed_limit.setter
+    def speed_limit(self, limit):
+        return self.command('speed_limit_set_limit', limit_mph = limit)
+
+    def activate_speed_limit(self, pin):
+        return self.command('speed_limit_activate', pin = pin)
+
+    def deactivate_speed_limit(self, pin):
+        return self.command('speed_limit_deactivate', pin = pin)
+
+    def clear_speed_limit_pin(self, pin):
+        return self.command('speed_limit_clear_pin', pin = pin)
+
+    def valet_mode(self, on, pin):
+        return self.command('set_valet_mode', on = on, pin = pin)
+
+    def reset_valet_pin(self):
+        return self.command('reset_valet_pin')
+
+    def sentry_mode(self, on):
+        return self.command('set_sentry_mode', on = on)
+
     @property
     def locked(self):
         return self.vehicle_state['locked']
@@ -146,6 +178,11 @@ class Vehicle:
         else:
             return self.command('door_unlock')
 
+    def actuate_trunk(self):
+        return self.command('actuate_trunk', which_trunk = 'rear')
+
+    def actuate_frunk(self):
+        return self.command('actuate_trunk', which_trunk = 'front')
 
     def sun_roof_control(self, state, percent = None):
         args = {'state': state}
@@ -180,6 +217,43 @@ class Vehicle:
 
     def auto_conditioning_stop(self):
         return self.command('auto_conditioning_stop')
+
+    def media_toggle_playback(self):
+        return self.command('media_toggle_playback')
+
+    def media_next_track(self):
+        return self.command('media_next_track')
+
+    def media_prev_track(self):
+        return self.command('media_prev_track')
+
+    def media_next_fav(self):
+        return self.command('media_next_fav')
+
+    def media_prev_fav(self):
+        return self.command('media_prev_fav')
+
+    def media_volume_up(self):
+        return self.command('media_volume_up')
+
+    def media_volume_down(self):
+        return self.command('media_volume_down')
+
+    def navigation_request(self, where):
+        return self.command('navigation_request',
+                            type = 'share_ext_content_raw',
+                            locale = 'en-US',
+                            value = {
+                                'android.intent.extra.TEXT': where
+                            },
+                            timestamp_ms = str(int(time.time())))
+
+    def schedule_software_update(self, offset_sec):
+        return self.command('schedule_software_update',
+                            offset_sec = offset_sec)
+
+    def cancel_software_update(self_sec):
+        return self.command('cancel_software_update')
 
     def wake_up(self):
         d = self._conn.read_json('/api/1/vehicles/{}/wake_up' \
