@@ -147,10 +147,10 @@ class Vehicle:
         if state == 'move' and percent != None:
             args['percent'] = percent
 
-        if state in ('open', 'close', 'move', 'comfort', 'vent'):
-            return self.command('sun_roof_control', **args)
+        if state not in ('open', 'close', 'move', 'comfort', 'vent'):
+            raise ValueError("Invalid sunroof state")
 
-        raise ValueError("Invalid sunroof state")
+        return self.command('sun_roof_control', **args)
 
     def set_temps(self, driver, passenger):
         return self.command('set_temps', driver_temp = driver,
